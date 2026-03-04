@@ -11,11 +11,11 @@
 - Διαβάζει τιμές από ένα **Controller Word (.docm)** που περιέχει έναν πίνακα **ΠΕΔΙΟ / ΤΙΜΗ**
 - Παίρνει όλα τα templates που ταιριάζουν στο μοτίβο **`TEMPLATE_*.docx`**
 - Δημιουργεί φάκελο **`OUTPUT`**
-- Παράγει **ξεχωριστές τελικές εκθέσεις** στο `OUTPUT` χωρίς να πειράζει τα templates
+- Παράγει **ξεχωριστά τελικά έγγραφα** στο `OUTPUT` χωρίς να πειράζει τα templates
 - Αντικαθιστά placeholders τύπου `{{Key}}` με τις αντίστοιχες τιμές
-- Υπολογίζει **ώρα έναρξης/περάτωσης** ανά έγγραφο:
+- Προαιρετικά εφαρμόζει **κανόνες χρόνου** (ώρα έναρξης/περάτωσης) ανά έγγραφο:
   - 10’ διάρκεια για όλα
-  - 20’ διάρκεια μόνο για “Κατάθεση Αστυνομικού” (ανίχνευση από όνομα αρχείου: περιέχει ΚΑΤΑΘΕΣΗ + ΑΣΤΥΝΟΜ)
+  - 20’ διάρκεια σε ένα συγκεκριμένο template-τύπο (π.χ. ανιχνεύεται από λέξεις στο όνομα αρχείου)
   - διάλειμμα `BreakMinutes` (2’/5’ κτλ) μεταξύ εγγράφων
 
 ### Πεδίο χρήσης
@@ -23,28 +23,26 @@
 Είναι ένα γενικό εργαλείο “template → output” για Word, που μπορεί να χρησιμοποιηθεί με τον ίδιο τρόπο για **οποιοδήποτε έγγραφο** (π.χ. αναφορές, πρακτικά, αιτήσεις, βεβαιώσεις, εταιρικά έντυπα, checklists), αρκεί να υπάρχουν placeholders τύπου `{{...}}` μέσα στα templates.
 
 ### Γρήγορο Setup (Word 2016 Windows)
-1. Άνοιξε το `examples/00_Controller_example.docx` και κάνε **Save As → .docm**.
-2. **Alt+F11 → File → Import File…** και κάνε import το `src/ControllerModule_TimeOutput_GR_ANSI.bas`.
-3. Βάλε τα δικά σου templates στον ίδιο φάκελο με το `.docm` και ονόμασέ τα `TEMPLATE_*.docx`.
-4. Βεβαιώσου ότι στα templates έχεις:
+1. Ανοίξτε το `examples/00_Controller_example.docx` και κάντε **Save As → .docm**.
+2. Πατήστε **Alt+F11 → File → Import File…** κάντε import το `src/ControllerModule_TimeOutput_GR_ANSI.bas` και μετά αποθήκευση με Ctrl + S.
+3. Βάλτε τα δικά σας templates στον ίδιο φάκελο με το `.docm` και ονομάστε τα `TEMPLATE_*.docx`.
+4. Βεβαιωθείτε ότι στα templates έχετε:
    - `{{OraEnarxis}}` στην αρχή (ώρα έναρξης)
    - `{{OraPeratosis}}` στο τέλος (ώρα περάτωσης)
-5. **Developer → Macros → Generate_Reports_To_OUTPUT_From_Table → Run**.
+5. Τρέξτε: **Developer → Macros → Generate_Reports_To_OUTPUT_From_Table → Run**.
 
-> Αν τα macros είναι blocked: κάνε Unblock στο .docm ή βάλε τον φάκελο σε Trusted Locations.
+> Αν τα macros είναι blocked: κάντε Unblock στο .docm ή προσθέστε τον φάκελο σε Trusted Locations.
 
-## Σημείωση ασφάλειας
-
+### Σημείωση ασφάλειας
 Το αποθετήριο περιέχει **απλό VBA κώδικα** και παραδείγματα templates.  
-Δεν κάνει λήψεις ή εκτέλεση εξωτερικού κώδικα, δεν κάνει δικτυακές κλήσεις και δεν επιχειρεί “persistence”.  
-Ο κώδικας είναι **πλήρως αναγνώσιμος/ελέγξιμος**. Όπως με κάθε macro-enabled λύση, να το τρέχετε μόνο σε αξιόπιστο περιβάλλον και μπορείτε να κάνετε έλεγχο με τα εργαλεία ασφαλείας που χρησιμοποιείτε.
+Δεν κάνει λήψεις/εκτέλεση εξωτερικού κώδικα, δεν κάνει δικτυακές κλήσεις και δεν επιχειρεί να “παραμείνει” στο σύστημα.  
+Ο κώδικας είναι **πλήρως αναγνώσιμος/ελέγξιμος**. Όπως με κάθε macro-enabled λύση, παρακαλούμε να το τρέχετε μόνο σε αξιόπιστο περιβάλλον και να κάνετε έλεγχο με τα εργαλεία ασφαλείας που χρησιμοποιείτε.
 
 ---
 
 ## English (EN)
 
 ### What it does
-
 **autodocproduct** is a lightweight Word automation workflow that generates finalized documents from reusable templates — and it can be used for **any document type**, not tied to a specific domain or organization.
 
 - You maintain one **Controller** document (a `.docm`) containing a simple **KEY / VALUE** table.
@@ -56,9 +54,10 @@
   - Optionally applies time-based rules (e.g., calculated start/end timestamps per generated document)
 
 Each run produces a clean set of output documents ready to share, print, or archive.
+
 ### Quick Setup (Word 2016 Windows)
 1. Open `examples/00_Controller_example.docx` and **Save As → .docm**.
-2. **Alt+F11 → File → Import File…** and import `src/ControllerModule_TimeOutput_GR_ANSI.bas`.
+2. Press **Alt+F11 → File → Import File…**  import `src/ControllerModule_TimeOutput_GR_ANSI.bas` and save with Ctrl + S.
 3. Put your templates next to the `.docm` and name them `TEMPLATE_*.docx`.
 4. Ensure templates contain:
    - `{{OraEnarxis}}` for start time
@@ -69,13 +68,7 @@ Each run produces a clean set of output documents ready to share, print, or arch
 This project is **not exclusively intended for law enforcement / public authorities**.  
 It is a general-purpose “template → output” Word automation tool and can be used the same way to generate **any kind of document** (e.g., reports, minutes, requests, certificates, corporate forms, checklists), as long as the templates contain `{{...}}` placeholders.
 
-## Security note
-
+### Security note
 This repository contains **plain VBA source code** and example templates.  
-It does **not** download or execute external code, does **not** make network requests, and does **not** attempt persistence.  
-The code is **fully readable/auditable** in this repo. As with any macro-enabled workflow, you should run it only in trusted environments and you may scan the files with your preferred security tools.
-
----
-
-## License
-MIT (see `LICENSE`).
+It does **not** download or execute external code, does **not** make network requests, and does not try to **persist** on the system.  
+The code is **fully readable/auditable** in this repo. As with any macro-enabled workflow, please run it only in trusted environments and feel free to scan the files with your preferred security tools.
