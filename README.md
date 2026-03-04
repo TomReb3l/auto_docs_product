@@ -17,32 +17,32 @@
   - 10’ διάρκεια για όλα
   - 20’ διάρκεια σε ένα συγκεκριμένο template-τύπο (π.χ. ανιχνεύεται από λέξεις στο όνομα αρχείου)
   - διάλειμμα `BreakMinutes` (2’/5’ κτλ) μεταξύ εγγράφων
- 
-### Σειρά εκθέσεων (πολύ σημαντικό για τις ώρες)
-Για να υπολογίζονται σωστά οι ώρες έναρξης/περάτωσης, τα templates πρέπει να έχουν **σαφή σειρά**.
-
-Προτείνεται να βάζετε **αρίθμηση στην αρχή του ονόματος αρχείου**, ώστε η σειρά να είναι ξεκάθαρη, π.χ.:
-- `TEMPLATE_1. ... .docx`
-- `TEMPLATE_2. ... .docx`
-- `TEMPLATE_3. ... .docx`
-
-Το macro επεξεργάζεται τα templates με βάση τη σειρά που επιστρέφει το σύστημα αρχείων. Η αρίθμηση στο όνομα βοηθάει ώστε να υπάρχει προβλέψιμη σειρά και να ξεκινάει από τη σωστή έκθεση για τους χρονικούς υπολογισμούς.
 
 ### Πεδίο χρήσης
 Το project **δεν είναι αποκλειστικά για χρήση από αστυνομικές/δημόσιες αρχές**.  
 Είναι ένα γενικό εργαλείο “template → output” για Word, που μπορεί να χρησιμοποιηθεί με τον ίδιο τρόπο για **οποιοδήποτε έγγραφο** (π.χ. αναφορές, πρακτικά, αιτήσεις, βεβαιώσεις, εταιρικά έντυπα, checklists), αρκεί να υπάρχουν placeholders τύπου `{{...}}` μέσα στα templates.
 
+### Σειρά εκθέσεων (πολύ σημαντικό για τις ώρες)
+Για να υπολογίζονται σωστά οι ώρες έναρξης/περάτωσης, τα templates πρέπει να έχουν **σαφή σειρά**.
+
+Προτείνεται να βάζετε **αρίθμηση στην αρχή του ονόματος αρχείου**, π.χ.:
+- `TEMPLATE_1. ... .docx`
+- `TEMPLATE_2. ... .docx`
+- `TEMPLATE_10. ... .docx`
+
+✅ Το macro ταξινομεί τα templates **αριθμητικά** (με βάση τον **πρώτο αριθμό** στο όνομα αρχείου), ώστε η σειρά να είναι πάντα προβλέψιμη και οι υπολογισμοί ώρας να βγαίνουν σωστά.
+
 ### Γρήγορο Setup (Word 2016 Windows)
 1. Ανοίξτε το `examples/00_Controller_example.docx` και κάντε **Save As → .docm**.
-2. Πατήστε **Alt+F11 → File → Import File…** κάντε import το `src/ControllerModule_TimeOutput_GR_ANSI.bas` και μετά αποθήκευση με Ctrl + S.
+2. Πατήστε **Alt+F11 → File → Import File…** και κάντε import το `src/ControllerModule_TimeOutput_Sorted_GR_ANSI.bas` (ή το αντίστοιχο `.bas` που χρησιμοποιείτε). Μετά κάντε αποθήκευση **Ctrl+S**.
 3. Βάλτε τα δικά σας templates στον ίδιο φάκελο με το `.docm` και ονομάστε τα `TEMPLATE_*.docx`.
 4. Βεβαιωθείτε ότι στα templates έχετε:
    - `{{OraEnarxis}}` στην αρχή (ώρα έναρξης)
    - `{{OraPeratosis}}` στο τέλος (ώρα περάτωσης)
-5. Τρέξτε: **Developer → Macros → Generate_Reports_To_OUTPUT_From_Table → Run** ή
-   - Πατήστε **Alt + F8**
-   - Επιλέξτε `Generate_Reports_To_OUTPUT_From_Table`
-   - Πατήστε **Run / Εκτέλεση**
+5. Τρέξτε: **Developer → Macros → Generate_Reports_To_OUTPUT_From_Table → Run** είτε πιο γρήγορα:
+- Πατήστε **Alt + F8**
+- Επιλέξτε `Generate_Reports_To_OUTPUT_From_Table`
+- Πατήστε **Run / Εκτέλεση**
 
 > Αν τα macros είναι blocked: κάντε Unblock στο .docm ή προσθέστε τον φάκελο σε Trusted Locations.
 
@@ -74,21 +74,21 @@ To calculate start/end times correctly, templates should have a **clear and pred
 We recommend adding a **leading number** to each template filename, for example:
 - `TEMPLATE_1. ... .docx`
 - `TEMPLATE_2. ... .docx`
-- `TEMPLATE_3. ... .docx`
+- `TEMPLATE_10. ... .docx`
 
-The macro processes templates based on the order returned by the file system. A consistent numbering scheme ensures a predictable sequence and correct time progression.
+✅ The macro sorts templates **numerically** (based on the **first number** in the filename) to ensure a consistent, predictable sequence and correct time progression.
 
 ### Quick Setup (Word 2016 Windows)
 1. Open `examples/00_Controller_example.docx` and **Save As → .docm**.
-2. Press **Alt+F11 → File → Import File…**  import `src/ControllerModule_TimeOutput_GR_ANSI.bas` and save with Ctrl + S.
+2. Press **Alt+F11 → File → Import File…** and import `src/ControllerModule_TimeOutput_Sorted_GR_ANSI.bas` (or the `.bas` you use). Then save with **Ctrl+S**.
 3. Put your templates next to the `.docm` and name them `TEMPLATE_*.docx`.
 4. Ensure templates contain:
    - `{{OraEnarxis}}` for start time
    - `{{OraPeratosis}}` for end time
 5. Run: **Developer → Macros → Generate_Reports_To_OUTPUT_From_Table → Run** or
-   - Press **Alt + F8**
-   - Select `Generate_Reports_To_OUTPUT_From_Table`
-   - Click **Run**
+- Press **Alt + F8**
+- Select `Generate_Reports_To_OUTPUT_From_Table`
+- Click **Run**
 
 ### Scope of use
 This project is **not exclusively intended for law enforcement / public authorities**.  
@@ -98,3 +98,8 @@ It is a general-purpose “template → output” Word automation tool and can b
 This repository contains **plain VBA source code** and example templates.  
 It does **not** download or execute external code, does **not** make network requests, and does not try to **persist** on the system.  
 The code is **fully readable/auditable** in this repo. As with any macro-enabled workflow, please run it only in trusted environments and feel free to scan the files with your preferred security tools.
+
+---
+
+## License
+MIT (see `LICENSE`).
