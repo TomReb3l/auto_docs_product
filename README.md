@@ -85,7 +85,7 @@ We recommend adding a **leading number** to each template filename, for example:
 4. Ensure templates contain:
    - `{{OraEnarxis}}` for start time
    - `{{OraPeratosis}}` for end time
-5. Run: **Developer → Macros → Generate_Reports_To_OUTPUT_From_Table → Run** or
+5. Run: **Developer → Macros → Generate_Reports_To_OUTPUT_From_Table → Run** or quicly:
 - Press **Alt + F8**
 - Select `Generate_Reports_To_OUTPUT_From_Table`
 - Click **Run**
