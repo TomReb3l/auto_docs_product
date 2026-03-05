@@ -9,14 +9,20 @@
 
 ### Τι κάνει
 - Διαβάζει τιμές από ένα **Controller Word (.docm)** που περιέχει έναν πίνακα **ΠΕΔΙΟ / ΤΙΜΗ**
-- Παίρνει όλα τα templates που ταιριάζουν στο μοτίβο **`TEMPLATE_*.docx`**
-- Δημιουργεί φάκελο **`OUTPUT`**
-- Παράγει **ξεχωριστά τελικά έγγραφα** στο `OUTPUT` χωρίς να πειράζει τα templates
+- Παίρνει templates που ταιριάζουν στο μοτίβο **`TEMPLATE_*.docx`**
+- Δημιουργεί φάκελο εξαγωγής με όνομα **ίσο με την τιμή του `CaseID`** (π.χ. `3008-12-150\`)
+- Παράγει **ξεχωριστά τελικά έγγραφα** στον φάκελο `CaseID` χωρίς να πειράζει τα templates
 - Αντικαθιστά placeholders τύπου `{{Key}}` με τις αντίστοιχες τιμές
-- Προαιρετικά εφαρμόζει **κανόνες χρόνου** (ώρα έναρξης/περάτωσης) ανά έγγραφο:
-  - 10’ διάρκεια για όλα
-  - 20’ διάρκεια σε ένα συγκεκριμένο template-τύπο (π.χ. ανιχνεύεται από λέξεις στο όνομα αρχείου)
-  - διάλειμμα `BreakMinutes` (2’/5’ κτλ) μεταξύ εγγράφων
+- Τα εξαγόμενα αρχεία παίρνουν όνομα **όπως το template**, αλλά:
+  - **χωρίς** το πρόθεμα `TEMPLATE_`
+  - **χωρίς** το `CaseID_` μπροστά
+
+### Timestamp (με ή χωρίς)
+Υπάρχουν δύο τρόποι εκτέλεσης:
+- **Με timestamp** (ώρα έναρξης/περάτωσης): συμπληρώνει αυτόματα `{{OraEnarxis}}` και `{{OraPeratosis}}`
+- **Χωρίς timestamp**: αφήνει τα `{{OraEnarxis}}` και `{{OraPeratosis}}` **κενά**
+
+> Και στις δύο περιπτώσεις, ο φάκελος εξαγωγής είναι πάντα ο φάκελος με όνομα `CaseID`, και τα αρχεία εξόδου έχουν όνομα “σαν το template” χωρίς `TEMPLATE_`.
 
 ### Πεδίο χρήσης
 Το project **δεν είναι αποκλειστικά για χρήση από αστυνομικές/δημόσιες αρχές**.  
@@ -34,17 +40,24 @@
 
 ### Γρήγορο Setup (Word 2016 Windows)
 1. Ανοίξτε το `examples/00_Controller_example.docx` και κάντε **Save As → .docm**.
-2. Πατήστε **Alt+F11 → File → Import File…** και κάντε import το `src/ControllerModule_TimeOutput_Sorted_GR_ANSI.bas` (ή το αντίστοιχο `.bas` που χρησιμοποιείτε). Μετά κάντε αποθήκευση **Ctrl+S**.
-3. Βάλτε τα δικά σας templates στον ίδιο φάκελο με το `.docm` και ονομάστε τα `TEMPLATE_*.docx`.
-4. Βεβαιωθείτε ότι στα templates έχετε:
+2. Πατήστε **Alt+F11 → File → Import File…** και κάντε import **το `.bas` που θέλετε**:
+   - **Με timestamp:** `src/ControllerModule_CaseFolder_StripTemplate_Sorted_Time_GR_ANSI.bas`
+   - **Χωρίς timestamp:** `src/ControllerModule_CaseFolder_StripTemplate_Sorted_NoTime_GR_ANSI.bas`
+   Μετά κάντε αποθήκευση **Ctrl+S**.
+3. Βάλτε τα templates στον ίδιο φάκελο με το `.docm` και ονομάστε τα `TEMPLATE_*.docx`.
+4. Αν θέλετε ώρες, βάλτε στα templates:
    - `{{OraEnarxis}}` στην αρχή (ώρα έναρξης)
    - `{{OraPeratosis}}` στο τέλος (ώρα περάτωσης)
-5. Τρέξτε: **Developer → Macros → Generate_Reports_To_OUTPUT_From_Table → Run** είτε πιο γρήγορα:
+
+### Εκτέλεση (Run)
+Μπορείτε να τρέξετε το macro είτε από το tab **Developer → Macros**, είτε πιο γρήγορα:
 - Πατήστε **Alt + F8**
-- Επιλέξτε `Generate_Reports_To_OUTPUT_From_Table`
+- Επιλέξτε το αντίστοιχο macro:
+  - **Με timestamp:** `Generate_Reports_To_CaseIDFolder_From_Table`
+  - **Χωρίς timestamp:** `Generate_Reports_To_CaseIDFolder_NoTime_From_Table`
 - Πατήστε **Run / Εκτέλεση**
 
-> Αν τα macros είναι blocked: κάντε Unblock στο .docm ή προσθέστε τον φάκελο σε Trusted Locations.
+> Αν τα macros είναι blocked: κάντε Unblock στο `.docm` ή προσθέστε τον φάκελο σε **Trusted Locations**.
 
 ### Σημείωση ασφάλειας
 Το αποθετήριο περιέχει **απλό VBA κώδικα** και παραδείγματα templates.  
@@ -56,17 +69,23 @@
 ## English (EN)
 
 ### What it does
-**autodocproduct** is a lightweight Word automation workflow that generates finalized documents from reusable templates — and it can be used for **any document type**, not tied to a specific domain or organization.
+**auto_doc_product** is a lightweight Word automation workflow that generates finalized documents from reusable templates — and it can be used for **any document type**, not tied to a specific domain or organization.
 
 - You maintain one **Controller** document (a `.docm`) containing a simple **KEY / VALUE** table.
 - You create one or more **template `.docx` files** containing placeholders like `{{Key}}`.
-- With a single macro run, the tool:
-  - Reads the values from the Controller table
-  - Copies each template into an `OUTPUT` folder (templates stay unchanged)
-  - Replaces all placeholders with the corresponding values across the document (including headers/footers and text boxes when present)
-  - Optionally applies time-based rules (e.g., calculated start/end timestamps per generated document)
+- The tool creates an output folder named **exactly as `CaseID`** (e.g., `3008-12-150\`).
+- With a single macro run, it:
+  - Reads values from the Controller table
+  - Copies each selected template into the **CaseID folder** (templates stay unchanged)
+  - Replaces all placeholders across the document (including headers/footers and text boxes when present)
+- Output filenames are based on the template name, but:
+  - the `TEMPLATE_` prefix is removed
+  - no `CaseID_` prefix is added
 
-Each run produces a clean set of output documents ready to share, print, or archive.
+### Timestamp (with or without)
+Two execution modes are supported:
+- **With timestamp:** automatically fills `{{OraEnarxis}}` and `{{OraPeratosis}}`
+- **Without timestamp:** leaves `{{OraEnarxis}}` and `{{OraPeratosis}}` blank
 
 ### Document order (important for time calculations)
 To calculate start/end times correctly, templates should have a **clear and predictable order**.
@@ -80,14 +99,21 @@ We recommend adding a **leading number** to each template filename, for example:
 
 ### Quick Setup (Word 2016 Windows)
 1. Open `examples/00_Controller_example.docx` and **Save As → .docm**.
-2. Press **Alt+F11 → File → Import File…** and import `src/ControllerModule_TimeOutput_Sorted_GR_ANSI.bas` (or the `.bas` you use). Then save with **Ctrl+S**.
+2. Press **Alt+F11 → File → Import File…** and import the `.bas` you want:
+   - **With timestamp:** `src/ControllerModule_CaseFolder_StripTemplate_Sorted_Time_GR_ANSI.bas`
+   - **Without timestamp:** `src/ControllerModule_CaseFolder_StripTemplate_Sorted_NoTime_GR_ANSI.bas`
+   Then save with **Ctrl+S**.
 3. Put your templates next to the `.docm` and name them `TEMPLATE_*.docx`.
-4. Ensure templates contain:
+4. If you want timestamps, ensure templates contain:
    - `{{OraEnarxis}}` for start time
    - `{{OraPeratosis}}` for end time
-5. Run: **Developer → Macros → Generate_Reports_To_OUTPUT_From_Table → Run** or quicly:
+
+### Run
+You can run the macro from **Developer → Macros**, or quickly:
 - Press **Alt + F8**
-- Select `Generate_Reports_To_OUTPUT_From_Table`
+- Select the macro you want:
+  - **With timestamp:** `Generate_Reports_To_CaseIDFolder_From_Table`
+  - **Without timestamp:** `Generate_Reports_To_CaseIDFolder_NoTime_From_Table`
 - Click **Run**
 
 ### Scope of use
