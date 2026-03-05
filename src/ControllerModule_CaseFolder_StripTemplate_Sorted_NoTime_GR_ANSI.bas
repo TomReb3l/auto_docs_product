@@ -1,0 +1,323 @@
+Attribute VB_Name = "ControllerModule"
+Option Explicit
+
+' ===========================
+'  ΡΥΘΜΙΣΕΙΣ / ΚΑΝΟΝΕΣ
+' ===========================
+Private Const DEFAULT_DURATION_MIN As Long = 10
+Private Const POLICE_DEPOSITION_DURATION_MIN As Long = 20
+Private Const DEFAULT_BREAK_MIN As Long = 5
+
+' ========= Helpers =========
+
+Private Function CleanCellText(ByVal s As String) As String
+    s = Replace(s, Chr(13), "")
+    s = Replace(s, Chr(7), "")
+    CleanCellText = Trim$(s)
+End Function
+
+Private Function FileExists(ByVal p As String) As Boolean
+    On Error GoTo NotThere
+    Dim a As Long
+    a = GetAttr(p)
+    FileExists = True
+    Exit Function
+NotThere:
+    FileExists = False
+End Function
+
+Private Function SafeFilePart(ByVal s As String) As String
+    Dim bad As Variant, i As Long
+    bad = Array("\", "/", ":", "*", "?", """", "<", ">", "|")
+    For i = LBound(bad) To UBound(bad)
+        s = Replace(s, bad(i), "-")
+    Next i
+    SafeFilePart = Trim$(s)
+End Function
+
+Private Function EnsureCaseFolder(ByVal baseFolder As String, ByVal caseId As String) As String
+    Dim outPath As String
+    Dim safeId As String
+
+    safeId = SafeFilePart(caseId)
+    If Len(safeId) = 0 Then safeId = Format(Now, "yyyymmdd_HHMMss")
+
+    outPath = baseFolder & "\" & safeId
+
+    If Dir(outPath, vbDirectory) = "" Then
+        MkDir outPath
+    End If
+
+    EnsureCaseFolder = outPath
+End Function
+
+Private Function BaseNameWithoutExt(ByVal filename As String) As String
+    Dim p As Long
+    p = InStrRev(filename, ".")
+    If p > 0 Then
+        BaseNameWithoutExt = Left$(filename, p - 1)
+    Else
+        BaseNameWithoutExt = filename
+    End If
+End Function
+
+Private Function FileExt(ByVal filename As String) As String
+    Dim p As Long
+    p = InStrRev(filename, ".")
+    If p > 0 Then
+        FileExt = Mid$(filename, p)
+    Else
+        FileExt = ""
+    End If
+End Function
+
+Private Function StripTemplatePrefix(ByVal s As String) As String
+    Dim u As String
+    u = UCase$(s)
+    If Left$(u, 9) = "TEMPLATE_" Then
+        s = Mid$(s, 10)
+    End If
+
+    Do While Len(s) > 0
+        Dim ch As String
+        ch = Left$(s, 1)
+        If ch = "_" Or ch = "-" Or ch = " " Then
+            s = Mid$(s, 2)
+        Else
+            Exit Do
+        End If
+    Loop
+
+    StripTemplatePrefix = Trim$(s)
+End Function
+
+Private Function ReadMapFromFirstTable(ByVal ctrlDoc As Document) As Object
+    Dim dict As Object
+    Set dict = CreateObject("Scripting.Dictionary")
+
+    If ctrlDoc.Tables.Count = 0 Then
+        Err.Raise vbObjectError + 101, , "Δεν βρέθηκε πίνακας στο Controller."
+    End If
+
+    Dim t As Table
+    Set t = ctrlDoc.Tables(1)
+
+    Dim r As Long
+    For r = 2 To t.Rows.Count
+        Dim k As String, v As String
+        k = CleanCellText(t.Cell(r, 1).Range.Text)
+        v = CleanCellText(t.Cell(r, 2).Range.Text)
+        If Len(k) > 0 Then dict(k) = v
+    Next r
+
+    Set ReadMapFromFirstTable = dict
+End Function
+
+Private Sub ReplaceAllInRange(ByVal rng As Range, ByVal findText As String, ByVal replText As String)
+    With rng.Find
+        .ClearFormatting
+        .Replacement.ClearFormatting
+        .Text = findText
+        .Replacement.Text = replText
+        .Forward = True
+        .Wrap = wdFindContinue
+        .Format = False
+        .MatchCase = False
+        .MatchWholeWord = False
+        .MatchWildcards = False
+        .Execute Replace:=wdReplaceAll
+    End With
+End Sub
+
+Private Sub ReplaceEverywhere(ByVal doc As Document, ByVal findText As String, ByVal replText As String)
+    Dim s As Range
+    For Each s In doc.StoryRanges
+        ReplaceAllInRange s, findText, replText
+        Do While Not (s.NextStoryRange Is Nothing)
+            Set s = s.NextStoryRange
+            ReplaceAllInRange s, findText, replText
+        Loop
+    Next s
+
+    Dim shp As Shape
+    For Each shp In doc.Shapes
+        If shp.TextFrame.HasText Then
+            ReplaceAllInRange shp.TextFrame.TextRange, findText, replText
+        End If
+    Next shp
+
+    Dim i As Long, j As Long
+    For i = 1 To doc.Sections.Count
+        For j = 1 To 3
+            On Error Resume Next
+            For Each shp In doc.Sections(i).Headers(j).Shapes
+                If shp.TextFrame.HasText Then
+                    ReplaceAllInRange shp.TextFrame.TextRange, findText, replText
+                End If
+            Next shp
+            For Each shp In doc.Sections(i).Footers(j).Shapes
+                If shp.TextFrame.HasText Then
+                    ReplaceAllInRange shp.TextFrame.TextRange, findText, replText
+                End If
+            Next shp
+            On Error GoTo 0
+        Next j
+    Next i
+End Sub
+
+Private Function BuildUniqueOutputName(ByVal outFolder As String, ByVal baseName As String, ByVal ext As String) As String
+    Dim candidate As String
+    candidate = outFolder & "\" & baseName & ext
+
+    Dim n As Long
+    n = 1
+    Do While FileExists(candidate)
+        candidate = outFolder & "\" & baseName & "_" & n & ext
+        n = n + 1
+    Loop
+
+    BuildUniqueOutputName = candidate
+End Function
+
+' ========= Sorting helpers (numeric order) =========
+
+Private Function ExtractFirstNumber(ByVal filename As String) As Long
+    Dim i As Long, ch As String, num As String
+    For i = 1 To Len(filename)
+        ch = Mid$(filename, i, 1)
+        If ch Like "#" Then
+            num = num & ch
+        ElseIf Len(num) > 0 Then
+            Exit For
+        End If
+    Next i
+
+    If Len(num) = 0 Then
+        ExtractFirstNumber = 999999
+    Else
+        ExtractFirstNumber = CLng(num)
+    End If
+End Function
+
+Private Sub SortFilesByNumberThenName(ByRef arr() As String)
+    Dim i As Long, j As Long
+    Dim a As String, b As String
+    Dim na As Long, nb As Long
+
+    For i = LBound(arr) To UBound(arr) - 1
+        For j = i + 1 To UBound(arr)
+            a = arr(i): b = arr(j)
+            na = ExtractFirstNumber(a): nb = ExtractFirstNumber(b)
+
+            If (na > nb) Or ((na = nb) And (StrComp(a, b, vbTextCompare) > 0)) Then
+                arr(i) = b
+                arr(j) = a
+            End If
+        Next j
+    Next i
+End Sub
+
+Private Function CollectAndSortTemplates(ByVal folderPath As String) As Variant
+    Dim files() As String
+    Dim cnt As Long
+    cnt = 0
+
+    Dim f As String
+    f = Dir(folderPath & "\TEMPLATE_*.docx")
+
+    Do While f <> ""
+        If Left$(f, 2) <> "~$" Then
+            cnt = cnt + 1
+            ReDim Preserve files(1 To cnt)
+            files(cnt) = f
+        End If
+        f = Dir()
+    Loop
+
+    If cnt = 0 Then
+        CollectAndSortTemplates = Null
+        Exit Function
+    End If
+
+    SortFilesByNumberThenName files
+    CollectAndSortTemplates = files
+End Function
+
+' ========= Main Macro (NO AUTO TIME) =========
+
+Public Sub Generate_Reports_To_CaseIDFolder_NoTime_From_Table()
+    Dim folderPath As String
+    folderPath = ThisDocument.Path
+    If Len(folderPath) = 0 Then
+        MsgBox "Αποθήκευσε πρώτα το 00_Controller.docm μέσα στον φάκελο με τα templates.", vbExclamation
+        Exit Sub
+    End If
+
+    Dim map As Object
+    On Error GoTo EH
+    Set map = ReadMapFromFirstTable(ThisDocument)
+    On Error GoTo 0
+
+    Dim rawCaseId As String
+    If map.Exists("CaseID") Then rawCaseId = CStr(map("CaseID")) Else rawCaseId = ""
+    If Len(SafeFilePart(rawCaseId)) = 0 Then rawCaseId = Format(Now, "yyyymmdd_HHMMss")
+
+    Dim outFolder As String
+    outFolder = EnsureCaseFolder(folderPath, rawCaseId)
+
+    ' Leave time placeholders blank
+    map("OraEnarxis") = ""
+    map("OraPeratosis") = ""
+
+    Dim templates As Variant
+    templates = CollectAndSortTemplates(folderPath)
+    If IsNull(templates) Then
+        MsgBox "Δεν βρέθηκαν templates (TEMPLATE_*.docx).", vbExclamation
+        Exit Sub
+    End If
+
+    Application.ScreenUpdating = False
+    Application.DisplayAlerts = wdAlertsNone
+
+    Dim producedCount As Long
+    producedCount = 0
+
+    Dim i As Long
+    For i = LBound(templates) To UBound(templates)
+        Dim f As String
+        f = templates(i)
+
+        Dim baseName As String, ext As String
+        baseName = StripTemplatePrefix(BaseNameWithoutExt(f))
+        ext = FileExt(f)
+
+        Dim srcFull As String, dstFull As String
+        srcFull = folderPath & "\" & f
+        dstFull = BuildUniqueOutputName(outFolder, baseName, ext)
+
+        FileCopy srcFull, dstFull
+
+        Dim doc As Document
+        Set doc = Documents.Open(FileName:=dstFull, ReadOnly:=False, AddToRecentFiles:=False)
+
+        Dim key As Variant
+        For Each key In map.Keys
+            ReplaceEverywhere doc, "{{" & CStr(key) & "}}", CStr(map(key))
+        Next key
+
+        doc.Save
+        doc.Close SaveChanges:=False
+        producedCount = producedCount + 1
+    Next i
+
+    Application.DisplayAlerts = wdAlertsAll
+    Application.ScreenUpdating = True
+
+    MsgBox "Έτοιμο. Παράχθηκαν " & producedCount & " έγγραφα στον φάκελο: " & outFolder, vbInformation
+    Exit Sub
+
+EH:
+    Application.DisplayAlerts = wdAlertsAll
+    Application.ScreenUpdating = True
+    MsgBox "Σφάλμα: " & Err.Description, vbExclamation
+End Sub
